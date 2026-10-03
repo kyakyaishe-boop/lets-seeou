@@ -1,34 +1,38 @@
-name: Build Axiom Client
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
-
-      - name: Grant gradlew permission
-        run: chmod +x gradlew
-
-      - name: Build Axiom Client mod
+- name: Build Axiom Client mod
+        working-directory: axiom-client
         run: ./gradlew build --no-daemon
+
+      - name: Grant launcher gradlew permission
+        run: chmod +x axiom-launcher/gradlew
 
       - name: Stage mod jar into launcher
         run: |
-          mkdir -p ../axiom-launcher/src/main/resources
-          cp build/libs/axiomclient-1.0.0.jar ../axiom-launcher/src/main/resources/
+          mkdir -p axiom-launcher/src/main/resources
+          cp axiom-client/build/libs/axiomclient-1.0.0.jar axiom-launcher/src/main/resources/
 
       - name: Build Axiom Launcher
+        working-directory: axiom-launcher
+        run: ./gradlew jar --no-daemon
+
+      - name: Upload client mod
+        uses: actions/upload-artifact@v4
+        with:
+          name: axiomclient-mod
+          path: axiom-client/build/libs/axiomclient-1.0.0.jar
+
+      - name: Upload launcher
+        uses: actions/upload-artifact@v4
+        with:
+          name: axiom-launcher
+          path: axiom-launcher/build/libs/axiom-launcher-1.0.0.jar
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0-${{ github.run_number }}
+          name: Axiom Client v1.0.0 (build ${{ github.run_number }})
+          files: |
+            axiom-client/build/libs/axiomclient-1.0.0.jar
+            axiom-launcher/build/libs/axiom-launcher-1.0.0.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
