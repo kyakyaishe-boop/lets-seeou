@@ -1,0 +1,34 @@
+name: Build Axiom Client
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Grant gradlew permission
+        run: chmod +x gradlew
+
+      - name: Build Axiom Client mod
+        run: ./gradlew build --no-daemon
+
+      - name: Stage mod jar into launcher
+        run: |
+          mkdir -p ../axiom-launcher/src/main/resources
+          cp build/libs/axiomclient-1.0.0.jar ../axiom-launcher/src/main/resources/
+
+      - name: Build Axiom Launcher
